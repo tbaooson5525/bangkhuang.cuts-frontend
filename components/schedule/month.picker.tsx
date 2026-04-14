@@ -59,7 +59,7 @@ export function MonthPicker({ selectedDate, onDateSelect }: MonthPickerProps) {
         ))}
       </div>
       <div className='grid grid-cols-7 gap-1 text-sm'>
-        {days.map((day, dayIdx) => (
+        {days.map((day) => (
           <button
             key={day.toString()}
             onClick={() => onDateSelect(day)}

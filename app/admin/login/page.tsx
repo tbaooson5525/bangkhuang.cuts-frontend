@@ -22,6 +22,7 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 import authApi from "@/api/authApi";
+import Image from "next/image";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Vui lòng nhập email"),
@@ -55,7 +56,7 @@ export default function AdminLoginPage() {
     <div className='p-8 flex-1 flex justify-center items-center'>
       <Card className='w-full max-w-sm shadow-lg'>
         <CardHeader className='text-center'>
-          <img src='/images/logo.png' alt='' />
+          <Image width={300} height={300} src='/images/logo.png' alt='' />
         </CardHeader>
         <CardContent>
           <FieldGroup>

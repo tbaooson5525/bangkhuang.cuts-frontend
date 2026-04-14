@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Trash2, Pencil, Plus, Check, X } from "lucide-react";
+import { Trash2, Pencil, Plus } from "lucide-react";
 import Image from "next/image";
 
 import PageTilte from "@/components/page-title";
@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useDrawer } from "@/hooks/useDrawer";
 import { useFormMutation } from "@/hooks/useFormMutation";
 import galleryApi from "@/api/galleryApi";
-import type { GalleryTheme, GalleryImage } from "@/lib/types";
+import type { GalleryTheme } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export default function GalleryPage() {

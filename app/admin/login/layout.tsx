@@ -1,4 +1,5 @@
 import { LOGIN_BG } from "@/lib/constants/images";
+import Image from "next/image";
 
 export default function LoginLayout({
   children,
@@ -8,7 +9,9 @@ export default function LoginLayout({
   return (
     <div className='flex w-screen min-h-screen'>
       {children}
-      <img
+      <Image
+        width={200}
+        height={300}
         className='w-1/2 h-screen object-cover hidden md:block'
         src={LOGIN_BG.src}
         alt=''

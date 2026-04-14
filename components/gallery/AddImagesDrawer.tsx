@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Upload } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import AppDrawer from "@/components/shared/AppDrawer";
 import ImageUploader from "@/components/image-uploader";
@@ -31,7 +30,7 @@ export default function AddImagesDrawer() {
     enabled: drawer.open,
   });
 
-  const { mutate, isPending, errorMessage } = useFormMutation({
+  const { isPending, errorMessage } = useFormMutation({
     mutationFn: async () => {
       if (!selectedThemeId) throw new Error("Chưa chọn tag");
       if (imageFiles.length === 0) throw new Error("Chưa chọn ảnh");
@@ -59,18 +58,18 @@ export default function AddImagesDrawer() {
     },
   });
 
-  const handleSubmit = () => {
-    if (!selectedThemeId) {
-      setValidationError("Vui lòng chọn tag");
-      return;
-    }
-    if (imageFiles.length === 0) {
-      setValidationError("Vui lòng chọn ít nhất 1 ảnh");
-      return;
-    }
-    setValidationError(null);
-    mutate(undefined as any);
-  };
+  // const handleSubmit = () => {
+  //   if (!selectedThemeId) {
+  //     setValidationError("Vui lòng chọn tag");
+  //     return;
+  //   }
+  //   if (imageFiles.length === 0) {
+  //     setValidationError("Vui lòng chọn ít nhất 1 ảnh");
+  //     return;
+  //   }
+  //   setValidationError(null);
+  //   mutate(undefined as any);
+  // };
 
   const handleClose = () => {
     drawer.onClose();

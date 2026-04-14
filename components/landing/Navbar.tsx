@@ -1,36 +1,41 @@
+import Image from "next/image";
+import Link from "next/link";
+
 export default function Navbar() {
   return (
     <header className='pt-12 flex justify-between'>
       {/* Logo */}
-      <a href='/' className='cursor-pointer'>
-        <img
+      <Link href='/' className='cursor-pointer'>
+        <Image
+          width={300}
+          height={300}
           className='h-auto w-[30%] object-cover'
           src='/images/sidebar_logo.png'
           alt='bangkhuang.cuts logo'
         />
-      </a>
+      </Link>
 
       {/* Navigation */}
       <nav className='flex'>
         <ul className=''>
           <li>
-            <a href='/about'>About</a>
+            <Link href='/about'>About</Link>
           </li>
           <li>
-            <a href='/location'>Location</a>
+            <Link href='/location'>Location</Link>
           </li>
           <li>
-            <a href='/services'>Services</a>
+            <Link href='/services'>Services</Link>
           </li>
           <li>
-            <a href='/services'>Barbers</a>
+            <Link href='/services'>Barbers</Link>
           </li>
         </ul>
       </nav>
 
       {/* Booking Button */}
       <div>
-        <a href='/booking'>Booking</a>
+        <Link href='/booking'>Booking</Link>
       </div>
     </header>
   );

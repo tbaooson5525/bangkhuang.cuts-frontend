@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { format, isSameDay, setHours, setMinutes } from "date-fns";
+import { format, isSameDay, setHours } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Appointment } from "@/lib/types";
 
