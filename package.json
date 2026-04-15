@@ -35,7 +35,7 @@
     "gsap": "^3.13.0",
     "lucide-react": "^0.511.0",
     "motion": "^12.35.2",
-    "next": "15.1.8",
+    "next": "^15.1.9",
     "radix-ui": "^1.4.3",
     "react": "^19.0.0",
     "react-day-picker": "^9.14.0",
