@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Upload } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import AppDrawer from "@/components/shared/AppDrawer";
-import ImageUploader from "@/components/image-uploader";
+import ImageUploader from "@/components/shared/ImageUploader";
 import ServerError from "@/components/shared/ServerError";
 import FormActions from "@/components/shared/FormActions";
-import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { useDrawer } from "@/hooks/useDrawer";
 import { useFormMutation } from "@/hooks/useFormMutation";
 import galleryApi from "@/api/galleryApi";
@@ -30,7 +30,7 @@ export default function AddImagesDrawer() {
     enabled: drawer.open,
   });
 
-  const { isPending, errorMessage } = useFormMutation({
+  const { mutate, isPending } = useFormMutation({
     mutationFn: async () => {
       if (!selectedThemeId) throw new Error("Chưa chọn tag");
       if (imageFiles.length === 0) throw new Error("Chưa chọn ảnh");
@@ -50,34 +50,35 @@ export default function AddImagesDrawer() {
     },
     invalidateKeys: [["gallery-themes"]],
     onSuccess: () => {
-      drawer.onClose();
-      setSelectedThemeId(null);
-      setImageFiles([]);
-      setUploaderKey((k) => k + 1);
-      setValidationError(null);
+      handleClose();
+      toast.success(`Đã tải lên ${imageFiles.length} ảnh thành công!`);
+    },
+    onError: (msg) => {
+      toast.error(msg);
     },
   });
 
-  // const handleSubmit = () => {
-  //   if (!selectedThemeId) {
-  //     setValidationError("Vui lòng chọn tag");
-  //     return;
-  //   }
-  //   if (imageFiles.length === 0) {
-  //     setValidationError("Vui lòng chọn ít nhất 1 ảnh");
-  //     return;
-  //   }
-  //   setValidationError(null);
-  //   mutate(undefined as any);
-  // };
-
-  const handleClose = () => {
+  function handleClose() {
     drawer.onClose();
     setSelectedThemeId(null);
     setImageFiles([]);
     setUploaderKey((k) => k + 1);
     setValidationError(null);
-  };
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedThemeId) {
+      setValidationError("Vui lòng chọn tag");
+      return;
+    }
+    if (imageFiles.length === 0) {
+      setValidationError("Vui lòng chọn ít nhất 1 ảnh");
+      return;
+    }
+    setValidationError(null);
+    mutate(undefined as never);
+  }
 
   return (
     <>
@@ -86,15 +87,22 @@ export default function AddImagesDrawer() {
         Thêm ảnh
       </Button>
 
-      <AppDrawer open={drawer.open} onClose={handleClose} title='Thêm ảnh'>
-        <div className='flex flex-col gap-5'>
+      <AppDrawer
+        open={drawer.open}
+        onClose={handleClose}
+        title='Thêm ảnh'
+        isLoading={isPending}
+      >
+        <form onSubmit={handleSubmit} className='flex flex-col gap-5'>
           {/* Tag selection */}
           <div className='flex flex-col gap-2'>
-            <p className='text-sm font-medium text-neutral-700'>Chọn tag</p>
+            <p className='text-sm font-medium text-neutral-700 dark:text-white/70'>
+              Chọn tag
+            </p>
             {loadingThemes ? (
-              <LoadingSpinner size='sm' />
+              <div className='w-5 h-5 rounded-full border-2 border-neutral-300 border-t-neutral-800 animate-spin' />
             ) : themes.length === 0 ? (
-              <p className='text-sm text-neutral-400'>
+              <p className='text-sm text-neutral-400 dark:text-white/30'>
                 Chưa có tag nào. Hãy tạo tag trước.
               </p>
             ) : (
@@ -107,8 +115,8 @@ export default function AddImagesDrawer() {
                     className={cn(
                       "px-3 py-1.5 rounded-full text-sm border transition-colors",
                       selectedThemeId === theme.id
-                        ? "bg-neutral-900 text-white border-neutral-900"
-                        : "border-neutral-200 hover:border-neutral-400",
+                        ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-neutral-900 dark:border-white"
+                        : "border-neutral-200 dark:border-white/10 hover:border-neutral-400 dark:hover:border-white/30 text-neutral-600 dark:text-white/60",
                     )}
                   >
                     {theme.name}
@@ -120,7 +128,7 @@ export default function AddImagesDrawer() {
 
           {/* Image upload */}
           <div className='flex flex-col gap-2'>
-            <p className='text-sm font-medium text-neutral-700'>
+            <p className='text-sm font-medium text-neutral-700 dark:text-white/70'>
               Chọn ảnh ({imageFiles.length} ảnh)
             </p>
             <ImageUploader
@@ -132,15 +140,15 @@ export default function AddImagesDrawer() {
             />
           </div>
 
-          <ServerError message={validationError ?? errorMessage} />
+          <ServerError message={validationError} />
 
           <FormActions
             isPending={isPending}
             onCancel={handleClose}
-            submitLabel={isPending ? "Đang tải lên..." : "Tải lên"}
+            submitLabel='Tải lên'
             pendingLabel='Đang tải lên...'
           />
-        </div>
+        </form>
       </AppDrawer>
     </>
   );

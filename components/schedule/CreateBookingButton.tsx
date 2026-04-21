@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { isAxiosError } from "axios";
+import { useQuery } from "@tanstack/react-query";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import { format } from "date-fns";
 import { User, Clock, Scissors, ChevronLeft, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 import * as z from "zod";
 
 import { Button } from "../ui/button";
@@ -30,14 +30,14 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "../ui/input-group";
-import { PhoneInput } from "../booking/phone-input";
+import { PhoneInput } from "../booking/PhoneInput";
 import availabilityApi from "@/api/availabilityApi";
 import serviceApi from "@/api/serviceApi";
 import bookingApi from "@/api/bookingApi";
 import { AvailabilityResponse, Service } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useFormMutation } from "@/hooks/useFormMutation";
 
-// ── Schema ─────────────────────────────────────────────────────────
 const createBookingSchema = z.object({
   customerName: z.string().min(1, "Vui lòng nhập họ tên"),
   phone: z.string().refine(isValidPhoneNumber, {
@@ -53,9 +53,7 @@ type CreateBookingForm = z.infer<typeof createBookingSchema>;
 
 const STEPS = ["Khách hàng", "Ngày & Giờ", "Dịch vụ"] as const;
 
-// ── Component ──────────────────────────────────────────────────────
 export default function CreateBookingButton() {
-  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
 
@@ -75,7 +73,6 @@ export default function CreateBookingButton() {
   const selectedStaffId = form.watch("staffId");
   const selectedServiceIds = form.watch("serviceIds");
 
-  // ── Queries ───────────────────────────────────────────────────────
   const { data: availability } = useQuery<AvailabilityResponse>({
     queryKey: ["availability", selectedDate],
     queryFn: () =>
@@ -88,21 +85,6 @@ export default function CreateBookingButton() {
     queryFn: () => serviceApi.getAll().then((r) => r.data),
   });
 
-  // ── Mutation ──────────────────────────────────────────────────────
-  const { mutate, isPending, error } = useMutation({
-    mutationFn: (data: CreateBookingForm) =>
-      bookingApi.adminCreateBooking(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bookings"] });
-      handleClose();
-    },
-  });
-
-  const errorMessage = isAxiosError(error)
-    ? (error.response?.data?.message ?? "Lỗi server, vui lòng thử lại")
-    : null;
-
-  // ── Helpers ───────────────────────────────────────────────────────
   const handleClose = () => {
     setOpen(false);
     setStep(0);
@@ -128,19 +110,30 @@ export default function CreateBookingButton() {
     );
   };
 
-  // Slots filtered by selected staff
   const availableSlots =
     availability?.slots.filter((s) =>
       selectedStaffId ? s.availableStaffIds.includes(selectedStaffId) : true,
     ) ?? [];
 
-  // ── Render ────────────────────────────────────────────────────────
+  const { mutate, isPending } = useFormMutation({
+    mutationFn: (data: CreateBookingForm) =>
+      bookingApi.adminCreateBooking(data),
+    invalidateKeys: [["bookings"]],
+    onSuccess: () => {
+      handleClose();
+      toast.success("Đã thêm lịch hẹn thành công!");
+    },
+    onError: (msg) => {
+      toast.error(msg);
+    },
+  });
+
   return (
     <Dialog
       open={open}
       onOpenChange={(o) => {
-        if (!o) handleClose();
-        else setOpen(true);
+        if (!o && !isPending) handleClose();
+        else if (o) setOpen(true);
       }}
     >
       <DialogTrigger asChild>
@@ -148,6 +141,13 @@ export default function CreateBookingButton() {
       </DialogTrigger>
 
       <DialogContent className='max-w-md'>
+        {/* Loading overlay */}
+        {isPending && (
+          <div className='absolute inset-0 bg-white/60 dark:bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-10 rounded-lg'>
+            <div className='w-8 h-8 rounded-full border-2 border-neutral-300 dark:border-white/20 border-t-neutral-800 dark:border-t-white animate-spin' />
+          </div>
+        )}
+
         <DialogHeader>
           <DialogTitle>Thêm lịch hẹn</DialogTitle>
         </DialogHeader>
@@ -159,11 +159,9 @@ export default function CreateBookingButton() {
               <div
                 className={cn(
                   "w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold transition-colors",
-                  i < step
-                    ? "bg-neutral-900 text-white"
-                    : i === step
-                      ? "bg-neutral-900 text-white"
-                      : "bg-neutral-200 text-neutral-500",
+                  i <= step
+                    ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900"
+                    : "bg-neutral-200 dark:bg-white/10 text-neutral-500 dark:text-white/40",
                 )}
               >
                 {i + 1}
@@ -172,8 +170,8 @@ export default function CreateBookingButton() {
                 className={cn(
                   "text-xs",
                   i === step
-                    ? "text-neutral-900 font-medium"
-                    : "text-neutral-400",
+                    ? "text-neutral-900 dark:text-white font-medium"
+                    : "text-neutral-400 dark:text-white/30",
                 )}
               >
                 {label}
@@ -181,8 +179,10 @@ export default function CreateBookingButton() {
               {i < STEPS.length - 1 && (
                 <div
                   className={cn(
-                    "flex-1 h-px w-6 bg-neutral-200",
-                    i < step && "bg-neutral-900",
+                    "flex-1 h-px w-6",
+                    i < step
+                      ? "bg-neutral-900 dark:bg-white"
+                      : "bg-neutral-200 dark:bg-white/10",
                   )}
                 />
               )}
@@ -190,7 +190,7 @@ export default function CreateBookingButton() {
           ))}
         </div>
 
-        {/* ── Step 0: Thông tin khách ── */}
+        {/* Step 0: Thông tin khách */}
         {step === 0 && (
           <FieldGroup>
             <FieldSet>
@@ -240,16 +240,14 @@ export default function CreateBookingButton() {
           </FieldGroup>
         )}
 
-        {/* ── Step 1: Ngày, Giờ, Nhân viên ── */}
+        {/* Step 1: Ngày, Giờ, Nhân viên */}
         {step === 1 && (
           <div className='flex flex-col gap-4'>
-            {/* Date picker */}
             <Field>
               <FieldLabel>Ngày</FieldLabel>
               <input
                 type='date'
-                className='w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900'
-                min={format(new Date(), "yyyy-MM-dd")}
+                className='w-full rounded-lg border border-neutral-200 dark:border-white/10 bg-transparent dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white/20'
                 value={selectedDate}
                 onChange={(e) => {
                   form.setValue("date", e.target.value, {
@@ -266,7 +264,6 @@ export default function CreateBookingButton() {
               )}
             </Field>
 
-            {/* Staff picker */}
             {availability && availability.staffs.length > 0 && (
               <Field>
                 <FieldLabel>Nhân viên</FieldLabel>
@@ -284,8 +281,8 @@ export default function CreateBookingButton() {
                       className={cn(
                         "px-3 py-1.5 rounded-full text-sm border transition-colors",
                         selectedStaffId === staff.id
-                          ? "bg-neutral-900 text-white border-neutral-900"
-                          : "border-neutral-200 hover:border-neutral-400",
+                          ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-neutral-900 dark:border-white"
+                          : "border-neutral-200 dark:border-white/10 hover:border-neutral-400 dark:hover:border-white/30 dark:text-white/70",
                       )}
                     >
                       {staff.name}
@@ -300,7 +297,6 @@ export default function CreateBookingButton() {
               </Field>
             )}
 
-            {/* Slot picker */}
             {selectedDate && (
               <Field>
                 <FieldLabel>
@@ -310,13 +306,15 @@ export default function CreateBookingButton() {
                     : ""}
                 </FieldLabel>
                 {!availability ? (
-                  <p className='text-sm text-neutral-400'>Đang tải...</p>
+                  <p className='text-sm text-neutral-400 dark:text-white/30'>
+                    Đang tải...
+                  </p>
                 ) : !availability.isWorkingDay ? (
                   <p className='text-sm text-red-500'>
                     Ngày này không làm việc
                   </p>
                 ) : availableSlots.length === 0 ? (
-                  <p className='text-sm text-neutral-400'>
+                  <p className='text-sm text-neutral-400 dark:text-white/30'>
                     Không còn slot trống
                   </p>
                 ) : (
@@ -333,8 +331,8 @@ export default function CreateBookingButton() {
                         className={cn(
                           "py-1.5 rounded-lg text-sm border transition-colors",
                           selectedSlot === s.time
-                            ? "bg-neutral-900 text-white border-neutral-900"
-                            : "border-neutral-200 hover:border-neutral-400",
+                            ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-neutral-900 dark:border-white"
+                            : "border-neutral-200 dark:border-white/10 hover:border-neutral-400 dark:hover:border-white/30 dark:text-white/70",
                         )}
                       >
                         {s.time}
@@ -352,10 +350,12 @@ export default function CreateBookingButton() {
           </div>
         )}
 
-        {/* ── Step 2: Dịch vụ ── */}
+        {/* Step 2: Dịch vụ */}
         {step === 2 && (
           <div className='flex flex-col gap-3'>
-            <p className='text-sm text-neutral-500'>Chọn ít nhất 1 dịch vụ</p>
+            <p className='text-sm text-neutral-500 dark:text-white/40'>
+              Chọn ít nhất 1 dịch vụ
+            </p>
             <div className='flex flex-col gap-2 max-h-60 overflow-y-auto'>
               {services.map((service) => {
                 const selected = selectedServiceIds.includes(service.id);
@@ -367,15 +367,17 @@ export default function CreateBookingButton() {
                     className={cn(
                       "flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-colors",
                       selected
-                        ? "bg-neutral-900 text-white border-neutral-900"
-                        : "border-neutral-200 hover:border-neutral-400",
+                        ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-neutral-900 dark:border-white"
+                        : "border-neutral-200 dark:border-white/10 hover:border-neutral-400 dark:hover:border-white/30 dark:text-white/80",
                     )}
                   >
                     <span className='font-medium text-sm'>{service.name}</span>
                     <span
                       className={cn(
                         "text-sm",
-                        selected ? "text-neutral-300" : "text-neutral-500",
+                        selected
+                          ? "text-neutral-300 dark:text-neutral-600"
+                          : "text-neutral-500 dark:text-white/40",
                       )}
                     >
                       {service.price.toLocaleString("vi-VN")}đ
@@ -389,16 +391,12 @@ export default function CreateBookingButton() {
                 {form.formState.errors.serviceIds.message}
               </p>
             )}
-
-            {errorMessage && (
-              <p className='text-sm text-red-500'>{errorMessage}</p>
-            )}
           </div>
         )}
 
-        {/* ── Summary (step 2) ── */}
+        {/* Summary (step 2) */}
         {step === 2 && selectedDate && selectedSlot && (
-          <div className='rounded-xl bg-neutral-50 p-3 text-sm text-neutral-600 space-y-1'>
+          <div className='rounded-xl bg-neutral-50 dark:bg-white/[0.04] p-3 text-sm text-neutral-600 dark:text-white/60 space-y-1'>
             <div className='flex gap-2'>
               <Clock className='w-4 h-4 mt-0.5 shrink-0' />
               <span>
@@ -419,19 +417,24 @@ export default function CreateBookingButton() {
           </div>
         )}
 
-        {/* ── Actions ── */}
+        {/* Actions */}
         <div className='flex gap-2 pt-1'>
           {step > 0 && (
             <Button
               variant='outline'
               onClick={() => setStep((s) => s - 1)}
+              disabled={isPending}
               className='flex-1'
             >
               <ChevronLeft className='w-4 h-4 mr-1' /> Quay lại
             </Button>
           )}
           {step < STEPS.length - 1 ? (
-            <Button onClick={handleNext} className='flex-1'>
+            <Button
+              onClick={handleNext}
+              disabled={isPending}
+              className='flex-1'
+            >
               Tiếp theo <ChevronRight className='w-4 h-4 ml-1' />
             </Button>
           ) : (

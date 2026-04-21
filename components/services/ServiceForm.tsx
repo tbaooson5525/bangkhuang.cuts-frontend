@@ -15,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import FormActions from "@/components/shared/FormActions";
-import ServerError from "@/components/shared/ServerError";
 
 const serviceSchema = z.object({
   name: z.string().min(1, "Tên dịch vụ không được để trống"),
@@ -31,7 +30,7 @@ export type ServiceFormValues = z.infer<typeof serviceSchema>;
 type Props = {
   defaultValues?: Partial<ServiceFormValues>;
   isPending: boolean;
-  errorMessage: string | null;
+  errorMessage?: string | null;
   onSubmit: (values: ServiceFormValues) => void;
   onCancel: () => void;
 };
@@ -39,7 +38,6 @@ type Props = {
 export default function ServiceForm({
   defaultValues,
   isPending,
-  errorMessage,
   onSubmit,
   onCancel,
 }: Props) {
@@ -124,8 +122,6 @@ export default function ServiceForm({
             )}
           />
         </FieldSet>
-
-        <ServerError message={errorMessage} />
       </FieldGroup>
 
       <FormActions isPending={isPending} onCancel={onCancel} />

@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
-import { MonthPicker } from "./month.picker";
-import { DayView } from "./day-view";
-import Card from "../card";
-import CustomButton from "../custom-button";
+import { MonthPicker } from "./MonthPicker";
+import { DayView } from "./DayView";
+import Card from "../shared/Card";
 import bookingApi from "@/api/bookingApi";
 import { Appointment } from "@/lib/types";
 
@@ -30,31 +29,33 @@ export default function Calendar() {
   return (
     <div className='flex gap-5 mt-5'>
       {/* Sidebar */}
-      <aside className='w-80 flex flex-col gap-6 overflow-y-auto hiddenn md:flex shrink-0'>
-        <Card actionBtn={<></>}>
+      <aside className='w-80 flex flex-col gap-6 overflow-y-auto hidden md:flex shrink-0'>
+        <Card>
           <MonthPicker
             selectedDate={selectedDate}
             onDateSelect={setSelectedDate}
           />
         </Card>
 
-        <Card actionBtn={<></>} className='flex-1 p-4'>
+        <Card className='flex-1 p-4'>
           <div className='flex justify-between items-center mb-3'>
-            <h3 className='text-sm font-semibold'>Sắp tới</h3>
-            <CustomButton
+            <h3 className='text-sm font-semibold text-neutral-900 dark:text-white'>
+              Sắp tới
+            </h3>
+            <button
               onClick={() => setSelectedDate(new Date())}
-              className='px-3 py-1.5 rounded-md text-xs'
+              className='px-3 py-1.5 rounded-md text-xs text-neutral-500 dark:text-white/40 hover:bg-neutral-100 dark:hover:bg-white/[0.06] transition-colors'
             >
               Hôm nay
-            </CustomButton>
+            </button>
           </div>
 
           {isLoading ? (
             <div className='flex justify-center py-4'>
-              <div className='w-5 h-5 rounded-full border-2 border-neutral-300 border-t-neutral-800 animate-spin' />
+              <div className='w-5 h-5 rounded-full border-2 border-neutral-300 dark:border-white/20 border-t-neutral-800 dark:border-t-white animate-spin' />
             </div>
           ) : upcomingAppointments.length === 0 ? (
-            <p className='text-xs text-neutral-400 text-center py-4'>
+            <p className='text-xs text-neutral-400 dark:text-white/30 text-center py-4'>
               Không có lịch hẹn sắp tới
             </p>
           ) : (
@@ -64,11 +65,11 @@ export default function Calendar() {
                 return (
                   <div
                     key={apt.id}
-                    className='p-3 rounded-lg border hover:bg-gray-50 transition-colors cursor-pointer'
+                    className='p-3 rounded-lg border border-neutral-100 dark:border-white/[0.06] hover:bg-neutral-50 dark:hover:bg-white/[0.03] transition-colors cursor-pointer'
                     onClick={() => setSelectedDate(startDate)}
                   >
                     <div className='flex justify-between items-start mb-1'>
-                      <span className='text-xs font-medium text-gray-900'>
+                      <span className='text-xs font-medium text-neutral-900 dark:text-white'>
                         {format(startDate, "MMM d, h:mm a")}
                       </span>
                       <span
@@ -81,12 +82,12 @@ export default function Calendar() {
                         }`}
                       />
                     </div>
-                    <div className='text-sm font-medium text-gray-700 truncate'>
+                    <p className='text-xs text-neutral-500 dark:text-white/40 truncate'>
                       {apt.customerName}
-                    </div>
-                    <div className='text-xs text-gray-400 truncate'>
+                    </p>
+                    <p className='text-xs text-neutral-400 dark:text-white/30 truncate'>
                       {apt.staff.name}
-                    </div>
+                    </p>
                   </div>
                 );
               })}
@@ -96,7 +97,7 @@ export default function Calendar() {
       </aside>
 
       {/* Day View */}
-      <Card actionBtn={<></>} className='flex-1 overflow-hidden p-6'>
+      <Card className='flex-1 overflow-hidden p-0'>
         <DayView selectedDate={selectedDate} appointments={appointments} />
       </Card>
     </div>

@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
+/* @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -10,112 +10,215 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-}
+} */
 
 @layer base {
   :root {
-    /* ── Brand palette ──────────────────────────────────────────── */
-    --background: 38 30% 90%; /* #EEEBDD — page background */
-    --foreground: 0 5% 10%; /* #1B1717 — general text */
+    /* ── Colors: Light ── */
+    --black-100: 0 0 0;
+    --black-80-opacity: 0.8;
+    --black-40-opacity: 0.4;
+    --black-20-opacity: 0.2;
+    --black-10-opacity: 0.1;
+    --black-4-opacity: 0.04;
 
-    --primary: 0 58% 51%; /* #CD3B3C — buttons, focus ring */
-    --primary-foreground: 0 0% 87%; /* #DEDEDE — text/icon on primary */
+    --white-100: 255 255 255;
 
-    --primary-hover: 0 83% 25%; /* #810000 — hover on primary elements */
+    --background-1: 255 255 255;
+    --background-2: 249 249 250;
+    --background-3: 255 255 255;
 
-    --secondary: 0 0% 87%; /* #DEDEDE — table bg, modal bg, drawer bg */
-    --secondary-foreground: 0 5% 10%; /* #1B1717 */
+    --surface-1: 255 255 255;
+    --surface-2: 0 0 0;
+    --surface-3: 0 0 0;
 
-    /* ── shadcn system tokens ───────────────────────────────────── */
-    --card: 38 30% 90%; /* same as background */
-    --card-foreground: 0 5% 10%;
+    --secondary-purple: 184 153 235;
+    --secondary-indigo: 173 173 251;
+    --secondary-blue: 125 187 255;
+    --secondary-cyan: 160 188 232;
+    --secondary-mint: 107 230 211;
+    --secondary-green: 113 221 140;
+    --secondary-yellow: 255 204 0;
+    --secondary-orange: 255 181 91;
+    --secondary-red: 255 71 71;
 
+    --primary: 0 0 0;
+    --logo-1: 76 152 253;
+    --logo-2: 79 80 127;
+    --color-1: 230 241 253;
+    --color-2: 237 238 252;
+
+    /* ── Spacing (Standard) ── */
+    --spacing-0: 0px;
+    --spacing-4: 4px;
+    --spacing-8: 8px;
+    --spacing-12: 12px;
+    --spacing-16: 16px;
+    --spacing-20: 20px;
+    --spacing-24: 24px;
+    --spacing-28: 28px;
+    --spacing-40: 40px;
+    --spacing-48: 48px;
+
+    /* ── Size ── */
+    --size-12: 12px;
+    --size-16: 16px;
+    --size-20: 20px;
+    --size-24: 24px;
+    --size-28: 28px;
+    --size-32: 32px;
+    --size-40: 40px;
+    --size-48: 48px;
+    --size-56: 56px;
+    --size-64: 64px;
+    --size-72: 72px;
+    --size-80: 80px;
+
+    /* ── Corner Radius ── */
+    --radius-0: 0px;
+    --radius-4: 4px;
+    --radius-8: 8px;
+    --radius-12: 12px;
+    --radius-16: 16px;
+    --radius-20: 20px;
+    --radius-24: 24px;
+    --radius-28: 28px;
+    --radius-32: 32px;
+    --radius-40: 40px;
+    --radius-48: 48px;
+    --radius-80: 80px;
+
+    /* ── Typography ── */
+    --font-family: "Inter", sans-serif;
+    --font-weight-regular: 400;
+    --font-weight-semibold: 600;
+    --letter-spacing: 0em;
+
+    /* ── Shadcn-compatible semantic tokens (Light) ── */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 5%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 5%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 5% 10%;
-
-    --muted: 0 0% 87%; /* #DEDEDE */
-    --muted-foreground: 0 5% 40%;
-
-    --accent: 0 0% 87%; /* #DEDEDE */
-    --accent-foreground: 0 5% 10%;
-
-    --destructive: 0 84.2% 60.2%;
+    --popover-foreground: 0 0% 5%;
+    --primary-shadcn: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary-shadcn: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-
-    --border: 0 0% 83%; /* slightly darker than #DEDEDE */
-    --input: 0 0% 83%;
-    --ring: 0 58% 51%; /* #CD3B3C — focus ring */
-
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 5%;
     --radius: 0.5rem;
 
-    /* ── Chart colors (unchanged) ───────────────────────────────── */
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    /* Sidebar width tokens */
+    --sidebar-width: 212px;
+    --sidebar-width-collapsed: 64px;
+    --rightbar-width: 280px;
   }
 
-  /* Dark mode — kept minimal, adjust later if needed */
+  /* ── Dark Mode ── */
   .dark {
-    --background: 0 5% 10%;
-    --foreground: 38 30% 90%;
-    --primary: 0 58% 51%;
-    --primary-foreground: 0 0% 87%;
-    --secondary: 0 0% 20%;
-    --secondary-foreground: 38 30% 90%;
-    --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 0 0% 20%;
-    --accent-foreground: 38 30% 90%;
-    --card: 0 5% 10%;
-    --card-foreground: 38 30% 90%;
-    --popover: 0 5% 10%;
-    --popover-foreground: 38 30% 90%;
-    --border: 0 0% 25%;
-    --input: 0 0% 25%;
-    --ring: 0 58% 51%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-  }
-}
+    --background-1: 32 32 32;
+    --background-2: 24 24 24;
+    --background-3: 40 40 40;
+    --surface-1: 255 255 255;
+    --surface-2: 0 0 0;
+    --primary: 255 255 255;
 
-@layer base {
+    --background: 0 0% 10%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 13%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 13%;
+    --popover-foreground: 0 0% 98%;
+    --primary-shadcn: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary-shadcn: 0 0% 18%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62% 48%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 22%;
+    --input: 0 0% 22%;
+    --ring: 0 0% 80%;
+  }
+
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
+    box-sizing: border-box;
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: rgb(var(--background-1));
+    color: rgb(var(--black-100));
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-regular);
+    letter-spacing: var(--letter-spacing);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .dark body {
+    color: rgb(var(--white-100));
   }
 }
 
-@layer components {
-  .btn-primary-hover:hover,
-  [data-slot="button"][class*="bg-primary"]:hover {
-    background-color: #810000 !important;
+/* ── Custom scrollbar ── */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  }
+  .dark .scrollbar-thin {
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.15);
+  }
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sidebar-transition {
+    transition:
+      width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .fade-in {
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 }
-
-/* Background
-bg-background    // #EEEBDD — page bg
-bg-secondary     // #DEDEDE — surface (table, modal, drawer, button)
-bg-primary       // #CD3B3C — action (button, badge)
-bg-muted         // #DEDEDE — same as secondary
-bg-accent        // #DEDEDE — same as secondary
-
-// Text
-text-foreground          // #1B1717 — general text
-text-primary-foreground  // #DEDEDE — text trên nền primary đỏ
-text-muted-foreground    // gray — subtext, placeholder
-
-// Hover
-hover:bg-primary         // #CD3B3C
-hover:bg-brand-hover     // #810000 — exact hover color
-
-Brand classes (khi cần exact hex, không quan tâm dark mode)
-bg-brand-bg       // #EEEBDD
-bg-brand-surface  // #DEDEDE
-bg-brand-primary  // #CD3B3C
-hover:bg-brand-hover  // #810000
-text-brand-text   // #1B1717 */

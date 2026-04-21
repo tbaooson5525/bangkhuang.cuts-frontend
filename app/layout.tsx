@@ -2,7 +2,9 @@ import type React from "react";
 import type { Metadata, Viewport } from "next";
 import "../styles/globals.css";
 import { Inter } from "next/font/google";
-import Providers from "@/components/provider";
+import { ThemeProvider } from "next-themes";
+import Providers from "@/components/shared/Provider";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "bangkhuang.cuts",
@@ -27,7 +29,14 @@ export default function RootLayout({
   return (
     <html lang='en' suppressHydrationWarning>
       <body className={`${inter.className} min-h-screen w-screen`}>
-        <Providers>{children}</Providers>
+        <ThemeProvider
+          attribute='class'
+          defaultTheme='light'
+          storageKey='darkMode'
+        >
+          <Providers>{children}</Providers>
+          <Toaster position='top-right' richColors />
+        </ThemeProvider>
       </body>
     </html>
   );

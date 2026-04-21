@@ -1,6 +1,6 @@
 "use client";
 import authApi from "@/api/authApi";
-import PageTitle from "@/components/page-title";
+import PageTitle from "@/components/shared/PageTitle";
 import { Button } from "@/components/ui/button";
 import {
   Field,

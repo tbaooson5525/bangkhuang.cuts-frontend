@@ -1,148 +1,141 @@
 "use client";
 
-import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { format, isToday } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Calendar, CheckCircle2, Clock, Users } from "lucide-react";
-
 import bookingApi from "@/api/bookingApi";
 import staffApi from "@/api/staffApi";
 import serviceApi from "@/api/serviceApi";
 import galleryApi from "@/api/galleryApi";
-import type { Appointment, Staff, Service, GalleryTheme } from "@/lib/types";
-
-import HeroStaffCard from "@/components/dashboard/HeroStaffCard";
-import StatCard from "@/components/dashboard/StatCard";
-import WeeklyCalendar from "@/components/dashboard/WeeklyCalendar";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { SalesChart } from "@/components/dashboard/SalesChart";
+import Card from "@/components/shared/Card";
 import TodaySchedule from "@/components/dashboard/TodaySchedule";
 import RevenueCard from "@/components/dashboard/RevenueCard";
 import GalleryPreviewCard from "@/components/dashboard/GalleryPreviewCard";
+import ServiceCard from "@/components/dashboard/ServiceCard";
+import type { Appointment, Staff } from "@/lib/types";
 
-export default function DashboardPage() {
-  const greeting = format(new Date(), "EEEE, dd MMMM yyyy", { locale: vi });
+const DASHBOARD_STALE_MS = 2 * 60 * 1000;
 
-  const { data: bookings = [], isLoading: loadingBookings } = useQuery<
-    Appointment[]
-  >({
+function useDashboard() {
+  const { data: bookings = [], isLoading: l1 } = useQuery<Appointment[]>({
     queryKey: ["bookings"],
     queryFn: () => bookingApi.getAllBookings().then((r) => r.data),
+    staleTime: DASHBOARD_STALE_MS,
   });
-
-  const { data: staffList = [], isLoading: loadingStaffs } = useQuery<Staff[]>({
+  const { data: staffList = [], isLoading: l2 } = useQuery<Staff[]>({
     queryKey: ["staffs"],
     queryFn: () => staffApi.getAll().then((r) => r.data),
+    staleTime: DASHBOARD_STALE_MS,
   });
-
-  const { data: services = [] } = useQuery<Service[]>({
+  const { data: services = [], isLoading: l3 } = useQuery({
     queryKey: ["services"],
     queryFn: () => serviceApi.getAll().then((r) => r.data),
+    staleTime: DASHBOARD_STALE_MS,
   });
-
-  const { data: themes = [] } = useQuery<GalleryTheme[]>({
+  const { data: themes = [], isLoading: l4 } = useQuery({
     queryKey: ["gallery-themes"],
     queryFn: () => galleryApi.getThemes().then((r) => r.data),
+    staleTime: DASHBOARD_STALE_MS,
   });
 
-  const todayBookings = useMemo(
-    () => bookings.filter((b) => isToday(new Date(b.appointmentStart))),
-    [bookings],
-  );
+  return {
+    bookings,
+    staffList,
+    services,
+    themes,
+    loading: l1 || l2 || l3 || l4,
+  };
+}
 
-  const stats = useMemo(
-    () => ({
+function useDashboardStats(bookings: Appointment[], staffList: Staff[]) {
+  return useMemo(() => {
+    const todayBookings = bookings.filter((b) =>
+      isToday(new Date(b.appointmentStart)),
+    );
+    return {
       todayTotal: todayBookings.length,
+      todayBookings,
       pending: bookings.filter((b) => b.status === "PENDING").length,
       done: bookings.filter((b) => b.status === "DONE").length,
       activeStaff: staffList.filter((s) => s.isActive).length,
-    }),
-    [bookings, todayBookings, staffList],
-  );
+    };
+  }, [bookings, staffList]);
+}
 
-  // Count today's bookings per staff for the hero slider
-  const todayCountByStaff = useMemo(
-    () =>
-      todayBookings.reduce<Record<number, number>>((acc, b) => {
-        acc[b.staffId] = (acc[b.staffId] ?? 0) + 1;
-        return acc;
-      }, {}),
-    [todayBookings],
-  );
+export default function DashboardPage() {
+  const { bookings, staffList, services, themes, loading } = useDashboard();
+  const greeting = format(new Date(), "EEEE, dd MMMM yyyy", { locale: vi });
+  const stats = useDashboardStats(bookings, staffList);
 
   return (
-    <div className='flex flex-col gap-4 pb-6'>
-      {/* Header */}
-      <div>
-        <h1 className='text-3xl font-bold text-foreground capitalize'>
+    <div className='flex flex-col gap-4 pb-0'>
+      {/* Greeting row — negative top margin to align with the pt-6 from layout */}
+      <div className='flex items-center justify-between pb-2'>
+        <h1 className='text-[20px] font-semibold tracking-tight text-foreground'>
           {greeting}
         </h1>
-        <p className='text-sm text-foreground/40 mt-0.5'>
+        <p className='text-sm text-foreground/40 mt-0.5 hidden sm:block'>
           Xem tổng quan hoạt động của tiệm
         </p>
       </div>
 
-      {/* Row 1: Hero slider + 2x2 Stats */}
-      <div className='grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4'>
-        <HeroStaffCard
-          staffList={staffList}
-          todayCountByStaff={todayCountByStaff}
-          loading={loadingStaffs}
-        />
-        <div className='grid grid-cols-2 gap-4'>
+      <div className='flex flex-col gap-4'>
+        <div className='grid grid-cols-2 xl:grid-cols-4 gap-4'>
           <StatCard
             label='Lịch hẹn hôm nay'
             value={stats.todayTotal}
             sub='tổng trong ngày'
             icon={Calendar}
-            accent='bg-brand-primary'
-            loading={loadingBookings}
+            bgColor='#edeefc'
+            loading={loading}
           />
           <StatCard
             label='Chờ xác nhận'
             value={stats.pending}
             sub='cần xử lý ngay'
             icon={Clock}
-            accent='bg-yellow-400'
-            loading={loadingBookings}
+            bgColor='#e6f1fd'
+            loading={loading}
           />
           <StatCard
             label='Đã hoàn thành'
             value={stats.done}
             sub='tất cả thời gian'
             icon={CheckCircle2}
-            accent='bg-green-500'
-            loading={loadingBookings}
+            bgColor='#edeefc'
+            loading={loading}
           />
           <StatCard
             label='Nhân viên active'
             value={stats.activeStaff}
             sub='đang hoạt động'
             icon={Users}
-            accent='bg-blue-400'
-            loading={loadingStaffs}
+            bgColor='#e6f1fd'
+            loading={loading}
           />
         </div>
-      </div>
 
-      {/* Row 2: Weekly calendar + Today schedule */}
-      <div className='grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4'>
-        <WeeklyCalendar appointments={bookings} loading={loadingBookings} />
-        <TodaySchedule appointments={todayBookings} loading={loadingBookings} />
-      </div>
+        <div className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
+          <Card className='lg:col-span-2 min-h-[300px]'>
+            <SalesChart data={bookings} />
+          </Card>
+          <Card className='min-h-[260px]'>
+            <TodaySchedule
+              appointments={stats.todayBookings}
+              loading={loading}
+            />
+          </Card>
+        </div>
 
-      {/* Row 3: Bottom summary */}
-      <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
-        <StatCard
-          label='Tổng lịch hẹn'
-          value={bookings.length}
-          sub={`+${todayBookings.length} hôm nay`}
-          icon={Calendar}
-          accent='bg-brand-primary'
-          fill='white'
-          loading={loadingBookings}
-        />
-        <RevenueCard appointments={bookings} loading={loadingBookings} />
-        <GalleryPreviewCard themes={themes} />
+        <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
+          <RevenueCard appointments={bookings} loading={loading} />
+          <GalleryPreviewCard themes={themes} loading={loading} />
+          <ServiceCard services={services} loading={loading} />
+        </div>
       </div>
     </div>
   );

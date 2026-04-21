@@ -3,34 +3,29 @@ import type { Config } from "tailwindcss";
 const config: Config = {
   darkMode: ["class"],
   content: [
-    "./pages/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
-        // ── Direct brand colors ──────────────────────────────────
-        // Use these when you need exact hex outside of CSS variable system
-        // e.g. className="bg-brand-bg" or "text-brand-text"
-        brand: {
-          bg: "#EEEBDD", // page background
-          surface: "#DEDEDE", // table / modal / drawer surface
-          primary: "#CD3B3C", // buttons, focus ring
-          hover: "#810000", // hover on primary
-          text: "#1B1717", // general text
-        },
-
-        // ── shadcn CSS variable tokens (do not remove) ───────────
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
         primary: {
-          DEFAULT: "hsl(var(--primary))",
+          DEFAULT: "hsl(var(--primary-shadcn))",
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
+          DEFAULT: "hsl(var(--secondary-shadcn))",
           foreground: "hsl(var(--secondary-foreground))",
         },
         muted: {
@@ -45,33 +40,64 @@ const config: Config = {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        chart: {
-          "1": "hsl(var(--chart-1))",
-          "2": "hsl(var(--chart-2))",
-          "3": "hsl(var(--chart-3))",
-          "4": "hsl(var(--chart-4))",
-          "5": "hsl(var(--chart-5))",
+        // ── Sidebar tokens ──
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar-background, var(--background)))",
+          foreground: "hsl(var(--sidebar-foreground, var(--foreground)))",
+          primary: "hsl(var(--sidebar-primary, var(--primary-shadcn)))",
+          "primary-foreground":
+            "hsl(var(--sidebar-primary-foreground, var(--primary-foreground)))",
+          accent: "hsl(var(--sidebar-accent, var(--accent)))",
+          "accent-foreground":
+            "hsl(var(--sidebar-accent-foreground, var(--accent-foreground)))",
+          border: "hsl(var(--sidebar-border, var(--border)))",
+          ring: "hsl(var(--sidebar-ring, var(--ring)))",
         },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        "snow-4": "var(--radius-4)",
+        "snow-8": "var(--radius-8)",
+        "snow-12": "var(--radius-12)",
+        "snow-16": "var(--radius-16)",
+        "snow-20": "var(--radius-20)",
+        "snow-24": "var(--radius-24)",
+      },
+      fontFamily: {
+        sans: ["Inter", "system-ui", "sans-serif"],
+      },
+      width: {
+        sidebar: "var(--sidebar-width)",
+        "sidebar-collapsed": "var(--sidebar-width-collapsed)",
+        rightbar: "var(--rightbar-width)",
+      },
+      transitionDuration: { 250: "250ms" },
+      keyframes: {
+        "fade-in": {
+          from: { opacity: "0", transform: "translateY(6px)" },
+          to: { opacity: "1", transform: "none" },
+        },
+        "slide-in-left": {
+          from: { transform: "translateX(-100%)" },
+          to: { transform: "translateX(0)" },
+        },
+        "slide-in-right": {
+          from: { transform: "translateX(100%)" },
+          to: { transform: "translateX(0)" },
+        },
+      },
+      animation: {
+        "fade-in": "fade-in 0.2s ease both",
+        "slide-in-left": "slide-in-left 0.25s cubic-bezier(0.4,0,0.2,1)",
+        "slide-in-right": "slide-in-right 0.25s cubic-bezier(0.4,0,0.2,1)",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [],
 };
-
 export default config;

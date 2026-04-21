@@ -1,180 +1,60 @@
 "use client";
 
-import { useState, useCallback, memo } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2, Check, X } from "lucide-react";
+import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
-import PageTilte from "@/components/page-title";
-import CreateServiceButton from "@/components/services/create-service";
 import AppDrawer from "@/components/shared/AppDrawer";
+import RowActions from "@/components/shared/RowActions";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import ServiceForm, {
   ServiceFormValues,
 } from "@/components/services/ServiceForm";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useDrawer } from "@/hooks/useDrawer";
 import { useFormMutation } from "@/hooks/useFormMutation";
 import serviceApi from "@/api/serviceApi";
-import type { Service, UpdateServicePayload } from "@/lib/types";
-import { cn } from "@/lib/utils";
-
-type EditForm = { name: string; description: string; price: number };
-
-// Memoized row to prevent full table re-render on single row edit
-const ServiceRow = memo(function ServiceRow({
-  service,
-  isEditing,
-  editForm,
-  isUpdating,
-  onStartEdit,
-  onCancelEdit,
-  onConfirmEdit,
-  onEditFormChange,
-  onToggleActive,
-  onDelete,
-}: {
-  service: Service;
-  isEditing: boolean;
-  editForm: EditForm;
-  isUpdating: boolean;
-  onStartEdit: (s: Service) => void;
-  onCancelEdit: () => void;
-  onConfirmEdit: (id: number) => void;
-  onEditFormChange: (field: keyof EditForm, value: string | number) => void;
-  onToggleActive: (id: number, checked: boolean) => void;
-  onDelete: (id: number) => void;
-}) {
-  return (
-    <tr
-      className={cn(
-        "transition-colors",
-        isEditing ? "bg-neutral-50" : "hover:bg-neutral-50/50",
-      )}
-    >
-      <td className='px-5 py-3'>
-        {isEditing ? (
-          <input
-            className='w-full rounded-lg border border-neutral-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900'
-            value={editForm.name}
-            onChange={(e) => onEditFormChange("name", e.target.value)}
-          />
-        ) : (
-          <span className='font-medium text-neutral-900'>{service.name}</span>
-        )}
-      </td>
-
-      <td className='px-5 py-3 text-neutral-500 max-w-xs'>
-        {isEditing ? (
-          <input
-            className='w-full rounded-lg border border-neutral-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900'
-            value={editForm.description}
-            placeholder='Mô tả (không bắt buộc)'
-            onChange={(e) => onEditFormChange("description", e.target.value)}
-          />
-        ) : (
-          <span className='truncate block'>{service.description ?? "—"}</span>
-        )}
-      </td>
-
-      <td className='px-5 py-3 text-right'>
-        {isEditing ? (
-          <input
-            type='number'
-            className='w-28 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-neutral-900'
-            value={editForm.price}
-            onChange={(e) => onEditFormChange("price", Number(e.target.value))}
-          />
-        ) : (
-          <span className='font-medium text-neutral-900'>
-            {service.price.toLocaleString("vi-VN")}đ
-          </span>
-        )}
-      </td>
-
-      <td className='px-5 py-3 text-center'>
-        <Switch
-          checked={service.isActive}
-          disabled={isEditing}
-          onCheckedChange={(checked) => onToggleActive(service.id, checked)}
-        />
-      </td>
-
-      <td className='px-5 py-3'>
-        <div className='flex items-center justify-end gap-1'>
-          {isEditing ? (
-            <>
-              <button
-                onClick={() => onConfirmEdit(service.id)}
-                disabled={isUpdating}
-                className='p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50'
-              >
-                <Check className='w-4 h-4' />
-              </button>
-              <button
-                onClick={onCancelEdit}
-                className='p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 transition-colors'
-              >
-                <X className='w-4 h-4' />
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => onStartEdit(service)}
-                className='p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 transition-colors'
-              >
-                <Pencil className='w-4 h-4' />
-              </button>
-              <button
-                onClick={() => onDelete(service.id)}
-                className='p-1.5 rounded-lg text-neutral-400 hover:bg-red-50 hover:text-red-500 transition-colors'
-              >
-                <Trash2 className='w-4 h-4' />
-              </button>
-            </>
-          )}
-        </div>
-      </td>
-    </tr>
-  );
-});
+import type { Service } from "@/lib/types";
+import PageTitle from "@/components/shared/PageTitle";
 
 export default function ServicesPage() {
   const queryClient = useQueryClient();
+  const createDrawer = useDrawer();
   const editDrawer = useDrawer();
   const [editingService, setEditingService] = useState<Service | null>(null);
-  const [inlineEditId, setInlineEditId] = useState<number | null>(null);
-  const [editForm, setEditForm] = useState<EditForm>({
-    name: "",
-    description: "",
-    price: 0,
-  });
+  const [confirmEdit, setConfirmEdit] = useState<{
+    open: boolean;
+    values: ServiceFormValues | null;
+  }>({ open: false, values: null });
 
   const { data: services = [], isLoading } = useQuery<Service[]>({
     queryKey: ["services"],
     queryFn: () => serviceApi.getAll().then((r) => r.data),
   });
 
-  const { mutate: updateService, isPending: isUpdating } = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateServicePayload }) =>
-      serviceApi.update(id, data),
+  // Create
+  const { mutate: createService, isPending: isCreating } = useFormMutation({
+    mutationFn: (values: ServiceFormValues) =>
+      serviceApi.create({
+        name: values.name,
+        price: Number(values.price),
+        description: values.description,
+      }),
+    invalidateKeys: [["services"]],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["services"] });
-      setInlineEditId(null);
+      createDrawer.onClose();
+      toast.success("Tạo dịch vụ thành công!");
+    },
+    onError: (msg) => {
+      toast.error(msg);
     },
   });
 
-  const { mutate: deleteService } = useMutation({
-    mutationFn: (id: number) => serviceApi.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["services"] }),
-  });
-
-  // Drawer edit mutation
-  const {
-    mutate: updateViaDrawer,
-    isPending: isDrawerUpdating,
-    errorMessage: drawerError,
-  } = useFormMutation({
+  // Update
+  const { mutate: updateService, isPending: isUpdating } = useFormMutation({
     mutationFn: (values: ServiceFormValues) =>
       serviceApi.update(editingService!.id, {
         name: values.name,
@@ -185,99 +65,141 @@ export default function ServicesPage() {
     onSuccess: () => {
       editDrawer.onClose();
       setEditingService(null);
+      toast.success("Cập nhật dịch vụ thành công!");
+    },
+    onError: (msg) => {
+      toast.error(msg);
     },
   });
 
-  const handleStartInlineEdit = useCallback((service: Service) => {
-    setInlineEditId(service.id);
-    setEditForm({
-      name: service.name,
-      description: service.description ?? "",
-      price: service.price,
-    });
-  }, []);
+  // Toggle active
+  const { mutate: toggleActive } = useMutation({
+    mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
+      serviceApi.update(id, { isActive }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["services"] }),
+  });
 
-  const handleEditFormChange = useCallback(
-    (field: keyof EditForm, value: string | number) => {
-      setEditForm((f) => ({ ...f, [field]: value }));
+  // Delete
+  const { mutate: deleteService } = useMutation({
+    mutationFn: (id: number) => serviceApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+      toast.success("Đã xoá dịch vụ.");
     },
-    [],
-  );
+    onError: () => {
+      toast.error("Không thể xoá dịch vụ. Vui lòng thử lại.");
+    },
+  });
 
-  const handleConfirmInlineEdit = useCallback(
-    (id: number) => {
-      if (!editForm.name.trim()) return;
-      updateService({
-        id,
-        data: {
-          name: editForm.name.trim(),
-          description: editForm.description || undefined,
-          price: editForm.price,
-        },
-      });
-    },
-    [editForm, updateService],
-  );
+  const openEdit = (service: Service) => {
+    setEditingService(service);
+    editDrawer.onOpen();
+  };
+
+  const handleEditSubmit = (values: ServiceFormValues) => {
+    setConfirmEdit({ open: true, values });
+  };
+
+  const handleConfirmEdit = () => {
+    if (confirmEdit.values) {
+      updateService(confirmEdit.values);
+    }
+    setConfirmEdit({ open: false, values: null });
+  };
 
   return (
-    <div className='flex flex-col h-full'>
-      <div className='flex justify-between items-center mb-6 shrink-0'>
-        <PageTilte text='Dịch vụ' />
-        <CreateServiceButton />
+    <div className='flex flex-col gap-6'>
+      {/* Header */}
+      <div className='flex items-center justify-between'>
+        <PageTitle text='Dịch vụ' />
+        <Button onClick={createDrawer.onOpen}>
+          <Plus className='w-4 h-4 mr-1.5' />
+          Thêm dịch vụ
+        </Button>
       </div>
 
-      <div className='flex-1 overflow-y-auto'>
-        {isLoading ? (
-          <LoadingSpinner />
-        ) : services.length === 0 ? (
-          <div className='flex items-center justify-center py-20 text-neutral-400 text-sm'>
-            Chưa có dịch vụ nào
-          </div>
-        ) : (
-          <div className='rounded-2xl border border-neutral-200 overflow-hidden'>
-            <table className='w-full text-sm'>
-              <thead>
-                <tr className='bg-neutral-50 border-b border-neutral-200'>
-                  <th className='text-left px-5 py-3 font-medium text-neutral-500'>
-                    Tên dịch vụ
-                  </th>
-                  <th className='text-left px-5 py-3 font-medium text-neutral-500'>
-                    Mô tả
-                  </th>
-                  <th className='text-right px-5 py-3 font-medium text-neutral-500'>
-                    Giá
-                  </th>
-                  <th className='text-center px-5 py-3 font-medium text-neutral-500'>
-                    Kích hoạt
-                  </th>
-                  <th className='px-5 py-3' />
+      {/* Table */}
+      {isLoading ? (
+        <LoadingSpinner />
+      ) : services.length === 0 ? (
+        <div className='flex items-center justify-center py-20 text-neutral-400 dark:text-white/30 text-sm'>
+          Chưa có dịch vụ nào
+        </div>
+      ) : (
+        <div className='rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden'>
+          <table className='w-full text-sm'>
+            <thead>
+              <tr className='bg-neutral-50 dark:bg-white/[0.03] border-b border-neutral-200 dark:border-white/[0.08]'>
+                <th className='text-left px-5 py-3 font-medium text-neutral-500 dark:text-white/40'>
+                  Tên dịch vụ
+                </th>
+                <th className='text-left px-5 py-3 font-medium text-neutral-500 dark:text-white/40'>
+                  Mô tả
+                </th>
+                <th className='text-right px-5 py-3 font-medium text-neutral-500 dark:text-white/40'>
+                  Giá
+                </th>
+                <th className='text-center px-5 py-3 font-medium text-neutral-500 dark:text-white/40'>
+                  Kích hoạt
+                </th>
+                <th className='px-5 py-3 w-20' />
+              </tr>
+            </thead>
+            <tbody className='divide-y divide-neutral-100 dark:divide-white/[0.05]'>
+              {services.map((service) => (
+                <tr
+                  key={service.id}
+                  className='hover:bg-neutral-50/50 dark:hover:bg-white/[0.02] transition-colors'
+                >
+                  <td className='px-5 py-3 font-medium text-neutral-900 dark:text-white'>
+                    {service.name}
+                  </td>
+                  <td className='px-5 py-3 text-neutral-500 dark:text-white/50 max-w-xs'>
+                    <span className='truncate block'>
+                      {service.description ?? "—"}
+                    </span>
+                  </td>
+                  <td className='px-5 py-3 text-right font-medium text-neutral-900 dark:text-white'>
+                    {service.price.toLocaleString("vi-VN")}đ
+                  </td>
+                  <td className='px-5 py-3 text-center'>
+                    <Switch
+                      checked={service.isActive}
+                      onCheckedChange={(checked) =>
+                        toggleActive({ id: service.id, isActive: checked })
+                      }
+                    />
+                  </td>
+                  <td className='px-5 py-3'>
+                    <RowActions
+                      onEdit={() => openEdit(service)}
+                      onDelete={() => deleteService(service.id)}
+                      deleteTitle='Xoá dịch vụ?'
+                      deleteDescription={`Dịch vụ "${service.name}" sẽ bị xoá. Hành động này không thể hoàn tác.`}
+                    />
+                  </td>
                 </tr>
-              </thead>
-              <tbody className='divide-y divide-neutral-100'>
-                {services.map((service) => (
-                  <ServiceRow
-                    key={service.id}
-                    service={service}
-                    isEditing={inlineEditId === service.id}
-                    editForm={editForm}
-                    isUpdating={isUpdating}
-                    onStartEdit={handleStartInlineEdit}
-                    onCancelEdit={() => setInlineEditId(null)}
-                    onConfirmEdit={handleConfirmInlineEdit}
-                    onEditFormChange={handleEditFormChange}
-                    onToggleActive={(id, checked) =>
-                      updateService({ id, data: { isActive: checked } })
-                    }
-                    onDelete={deleteService}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-      {/* Edit via Drawer (alternative to inline) */}
+      {/* Create Drawer */}
+      <AppDrawer
+        open={createDrawer.open}
+        onClose={createDrawer.onClose}
+        title='Thêm dịch vụ'
+        isLoading={isCreating}
+      >
+        <ServiceForm
+          isPending={isCreating}
+          onSubmit={createService}
+          onCancel={createDrawer.onClose}
+        />
+      </AppDrawer>
+
+      {/* Edit Drawer */}
       <AppDrawer
         open={editDrawer.open}
         onClose={() => {
@@ -285,6 +207,7 @@ export default function ServicesPage() {
           setEditingService(null);
         }}
         title='Chỉnh sửa dịch vụ'
+        isLoading={isUpdating}
       >
         {editingService && (
           <ServiceForm
@@ -293,9 +216,8 @@ export default function ServicesPage() {
               price: String(editingService.price),
               description: editingService.description ?? "",
             }}
-            isPending={isDrawerUpdating}
-            errorMessage={drawerError}
-            onSubmit={updateViaDrawer}
+            isPending={isUpdating}
+            onSubmit={handleEditSubmit}
             onCancel={() => {
               editDrawer.onClose();
               setEditingService(null);
@@ -303,6 +225,16 @@ export default function ServicesPage() {
           />
         )}
       </AppDrawer>
+
+      {/* Edit confirmation */}
+      <ConfirmDialog
+        open={confirmEdit.open}
+        onOpenChange={(o) => setConfirmEdit((s) => ({ ...s, open: o }))}
+        title='Xác nhận chỉnh sửa?'
+        description='Bạn có chắc muốn lưu thay đổi cho dịch vụ này không?'
+        confirmLabel='Lưu thay đổi'
+        onConfirm={handleConfirmEdit}
+      />
     </div>
   );
 }

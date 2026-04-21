@@ -1,69 +1,45 @@
-"use client";
-
-import Card from "@/components/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { TrendingUp, TrendingDown } from "lucide-react";
-
-type Props = {
+import { Skeleton } from "../ui/skeleton";
+interface StatCardProps {
   label: string;
-  value: number | string;
+  value: number;
   sub?: string;
-  trend?: number; // positive = up, negative = down
   icon: React.ElementType;
-  accent: string;
+  bgColor: string;
   loading?: boolean;
-  fill?: "white" | "red" | "image";
-};
+}
 
-export default function StatCard({
+export function StatCard({
   label,
   value,
-  sub,
-  trend,
-  icon: Icon,
-  accent,
   loading,
-  fill,
-}: Props) {
+  sub,
+  bgColor,
+  icon: Icon,
+}: StatCardProps) {
   return (
-    <Card fill={fill} actionBtn={<></>}>
-      <div className='flex items-center justify-between mb-3'>
-        <div
-          className={cn(
-            "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-            accent,
-          )}
-        >
-          <Icon className='w-4 h-4 text-white' />
-        </div>
-        {trend !== undefined && (
-          <div
-            className={cn(
-              "flex items-center gap-1 text-xs font-medium",
-              trend >= 0 ? "text-green-600" : "text-red-500",
-            )}
-          >
-            {trend >= 0 ? (
-              <TrendingUp className='w-3 h-3' />
-            ) : (
-              <TrendingDown className='w-3 h-3' />
-            )}
-            {Math.abs(trend)}%
-          </div>
-        )}
+    <div
+      className='rounded-[20px] p-6 flex flex-col gap-3 min-w-0 cursor-default transition-all duration-200 hover:shadow-sm hover:-translate-y-px'
+      style={{ background: bgColor }}
+    >
+      <div className='w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-black'>
+        <Icon className='w-4 h-4' />
       </div>
+      {/* Label */}
+      <p className='text-[13px] text-black/50 dark:text-black font-medium'>
+        {label}
+      </p>
+      {sub && (
+        <p className='text-xs text-foreground/30 dark:text-black/80'>{sub}</p>
+      )}
 
+      {/* Value */}
       {loading ? (
         <Skeleton className='h-10 w-20 mb-1' />
       ) : (
-        <p className='text-[40px] font-bold text-foreground leading-none'>
+        <p className='text-[40px] font-bold text-foreground dark:text-black leading-none'>
           {value}
         </p>
       )}
-
-      <p className='text-xs text-foreground/40 mt-1.5'>{label}</p>
-      {sub && <p className='text-xs text-foreground/30'>{sub}</p>}
-    </Card>
+    </div>
   );
 }

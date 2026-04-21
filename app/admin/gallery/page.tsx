@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Trash2, Pencil, Plus } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
 
-import PageTilte from "@/components/page-title";
 import AppDrawer from "@/components/shared/AppDrawer";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import AddImagesDrawer from "@/components/gallery/AddImagesDrawer";
 import GalleryThemeForm, {
   ThemeFormValues,
@@ -18,6 +19,7 @@ import { useFormMutation } from "@/hooks/useFormMutation";
 import galleryApi from "@/api/galleryApi";
 import type { GalleryTheme } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import PageTitle from "@/components/shared/PageTitle";
 
 export default function GalleryPage() {
   const queryClient = useQueryClient();
@@ -25,16 +27,24 @@ export default function GalleryPage() {
   const [editingTheme, setEditingTheme] = useState<GalleryTheme | null>(null);
   const [activeThemeId, setActiveThemeId] = useState<number | null>(null);
 
+  const [confirmDeleteTheme, setConfirmDeleteTheme] =
+    useState<GalleryTheme | null>(null);
+  const [confirmDeleteImage, setConfirmDeleteImage] = useState<number | null>(
+    null,
+  );
+  const [confirmEditTheme, setConfirmEditTheme] = useState<{
+    open: boolean;
+    values: ThemeFormValues | null;
+  }>({ open: false, values: null });
+
   const { data: themes = [], isLoading } = useQuery<GalleryTheme[]>({
     queryKey: ["gallery-themes"],
     queryFn: () => galleryApi.getThemes().then((r) => r.data),
   });
 
-  // Set first theme as active when loaded
   const displayedThemeId = activeThemeId ?? themes[0]?.id ?? null;
   const activeTheme = themes.find((t) => t.id === displayedThemeId);
 
-  // ── Create theme ──────────────────────────────────────────────
   const {
     mutate: createTheme,
     isPending: isCreating,
@@ -43,10 +53,15 @@ export default function GalleryPage() {
     mutationFn: (values: ThemeFormValues) =>
       galleryApi.createTheme({ name: values.name, slug: values.slug }),
     invalidateKeys: [["gallery-themes"]],
-    onSuccess: createThemeDrawer.onClose,
+    onSuccess: () => {
+      createThemeDrawer.onClose();
+      toast.success("Tạo tag thành công!");
+    },
+    onError: (msg) => {
+      toast.error(msg);
+    },
   });
 
-  // ── Update theme ──────────────────────────────────────────────
   const {
     mutate: updateTheme,
     isPending: isUpdating,
@@ -55,28 +70,53 @@ export default function GalleryPage() {
     mutationFn: ({ id, values }: { id: number; values: ThemeFormValues }) =>
       galleryApi.updateTheme(id, { name: values.name, slug: values.slug }),
     invalidateKeys: [["gallery-themes"]],
-    onSuccess: () => setEditingTheme(null),
+    onSuccess: () => {
+      setEditingTheme(null);
+      toast.success("Cập nhật tag thành công!");
+    },
+    onError: (msg) => {
+      toast.error(msg);
+    },
   });
 
-  // ── Delete theme ──────────────────────────────────────────────
   const { mutate: deleteTheme } = useMutation({
     mutationFn: (id: number) => galleryApi.deleteTheme(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["gallery-themes"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gallery-themes"] });
+      toast.success("Đã xoá tag.");
+    },
+    onError: () => {
+      toast.error("Không thể xoá tag. Vui lòng thử lại.");
+    },
   });
 
-  // ── Delete image ──────────────────────────────────────────────
   const { mutate: deleteImage } = useMutation({
     mutationFn: (id: number) => galleryApi.deleteImage(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["gallery-themes"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gallery-themes"] });
+      toast.success("Đã xoá ảnh.");
+    },
+    onError: () => {
+      toast.error("Không thể xoá ảnh. Vui lòng thử lại.");
+    },
   });
 
+  const handleEditSubmit = (values: ThemeFormValues) => {
+    setConfirmEditTheme({ open: true, values });
+  };
+
+  const handleConfirmEditTheme = () => {
+    if (confirmEditTheme.values && editingTheme) {
+      updateTheme({ id: editingTheme.id, values: confirmEditTheme.values });
+    }
+    setConfirmEditTheme({ open: false, values: null });
+  };
+
   return (
-    <div className='flex flex-col h-full'>
+    <div className='flex flex-col gap-6'>
       {/* Header */}
-      <div className='flex justify-between items-center mb-6 shrink-0'>
-        <PageTilte text='Gallery' />
+      <div className='flex items-center justify-between'>
+        <PageTitle text='Gallery' />
         <div className='flex gap-2'>
           <Button variant='outline' onClick={createThemeDrawer.onOpen}>
             <Plus className='w-4 h-4 mr-1' />
@@ -89,16 +129,16 @@ export default function GalleryPage() {
       {isLoading ? (
         <LoadingSpinner />
       ) : themes.length === 0 ? (
-        <div className='flex-1 flex flex-col items-center justify-center gap-3 text-neutral-400'>
+        <div className='flex flex-col items-center justify-center gap-3 py-20 text-neutral-400 dark:text-white/30'>
           <p className='text-sm'>Chưa có tag nào</p>
           <Button variant='outline' onClick={createThemeDrawer.onOpen}>
             Tạo tag đầu tiên
           </Button>
         </div>
       ) : (
-        <div className='flex-1 overflow-y-auto flex flex-col gap-6'>
+        <div className='flex flex-col gap-6'>
           {/* Theme tabs */}
-          <div className='flex items-center gap-2 flex-wrap shrink-0'>
+          <div className='flex items-center gap-2 flex-wrap'>
             {themes.map((theme) => (
               <button
                 key={theme.id}
@@ -106,8 +146,8 @@ export default function GalleryPage() {
                 className={cn(
                   "px-4 py-1.5 rounded-full text-sm font-medium border transition-colors",
                   displayedThemeId === theme.id
-                    ? "bg-neutral-900 text-white border-neutral-900"
-                    : "border-neutral-200 hover:border-neutral-400 text-neutral-600",
+                    ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-neutral-900 dark:border-white"
+                    : "border-neutral-200 dark:border-white/10 hover:border-neutral-400 dark:hover:border-white/30 text-neutral-600 dark:text-white/60",
                 )}
               >
                 {theme.name}
@@ -120,33 +160,25 @@ export default function GalleryPage() {
 
           {/* Active theme header */}
           {activeTheme && (
-            <div className='flex items-center justify-between shrink-0'>
+            <div className='flex items-center justify-between'>
               <div>
-                <h2 className='font-semibold text-neutral-900'>
+                <h2 className='font-semibold text-neutral-900 dark:text-white'>
                   {activeTheme.name}
                 </h2>
-                <p className='text-xs text-neutral-400'>
+                <p className='text-xs text-neutral-400 dark:text-white/30'>
                   /{activeTheme.slug} · {activeTheme.images.length} ảnh
                 </p>
               </div>
               <div className='flex gap-2'>
                 <button
                   onClick={() => setEditingTheme(activeTheme)}
-                  className='p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 transition-colors'
+                  className='p-1.5 rounded-lg text-neutral-400 dark:text-white/30 hover:bg-neutral-100 dark:hover:bg-white/[0.06] hover:text-neutral-700 dark:hover:text-white transition-colors'
                 >
                   <Pencil className='w-4 h-4' />
                 </button>
                 <button
-                  onClick={() => {
-                    if (
-                      confirm(
-                        `Xoá tag "${activeTheme.name}"? Tất cả ảnh trong tag này sẽ bị xoá.`,
-                      )
-                    ) {
-                      deleteTheme(activeTheme.id);
-                    }
-                  }}
-                  className='p-1.5 rounded-lg text-neutral-400 hover:bg-red-50 hover:text-red-500 transition-colors'
+                  onClick={() => setConfirmDeleteTheme(activeTheme)}
+                  className='p-1.5 rounded-lg text-neutral-400 dark:text-white/30 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-colors'
                 >
                   <Trash2 className='w-4 h-4' />
                 </button>
@@ -157,7 +189,7 @@ export default function GalleryPage() {
           {/* Images grid */}
           {activeTheme &&
             (activeTheme.images.length === 0 ? (
-              <div className='flex items-center justify-center py-20 text-neutral-400 text-sm border-2 border-dashed border-neutral-200 rounded-2xl'>
+              <div className='flex items-center justify-center py-20 text-neutral-400 dark:text-white/30 text-sm border-2 border-dashed border-neutral-200 dark:border-white/[0.08] rounded-2xl'>
                 Tag này chưa có ảnh nào
               </div>
             ) : (
@@ -165,7 +197,7 @@ export default function GalleryPage() {
                 {activeTheme.images.map((image) => (
                   <div
                     key={image.id}
-                    className='group relative aspect-square rounded-xl overflow-hidden bg-neutral-200'
+                    className='group relative aspect-square rounded-xl overflow-hidden bg-neutral-200 dark:bg-white/[0.06]'
                   >
                     <Image
                       src={image.thumbnailUrl}
@@ -174,10 +206,9 @@ export default function GalleryPage() {
                       className='object-cover'
                       sizes='(max-width:640px) 50vw, (max-width:1024px) 33vw, 20vw'
                     />
-                    {/* Delete overlay */}
                     <div className='absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center'>
                       <button
-                        onClick={() => deleteImage(image.id)}
+                        onClick={() => setConfirmDeleteImage(image.id)}
                         className='opacity-0 group-hover:opacity-100 p-2 rounded-full bg-red-500 text-white transition-opacity'
                       >
                         <Trash2 className='w-4 h-4' />
@@ -195,12 +226,13 @@ export default function GalleryPage() {
         open={createThemeDrawer.open}
         onClose={createThemeDrawer.onClose}
         title='Thêm tag'
+        isLoading={isCreating}
       >
         <GalleryThemeForm
           isPending={isCreating}
-          errorMessage={createError}
           onSubmit={(values) => createTheme(values)}
           onCancel={createThemeDrawer.onClose}
+          errorMessage={updateError}
         />
       </AppDrawer>
 
@@ -209,17 +241,54 @@ export default function GalleryPage() {
         open={!!editingTheme}
         onClose={() => setEditingTheme(null)}
         title='Chỉnh sửa tag'
+        isLoading={isUpdating}
       >
         {editingTheme && (
           <GalleryThemeForm
+            errorMessage={createError}
             defaultValues={{ name: editingTheme.name, slug: editingTheme.slug }}
             isPending={isUpdating}
-            errorMessage={updateError}
-            onSubmit={(values) => updateTheme({ id: editingTheme.id, values })}
+            onSubmit={handleEditSubmit}
             onCancel={() => setEditingTheme(null)}
           />
         )}
       </AppDrawer>
+
+      {/* Confirm: delete theme */}
+      <ConfirmDialog
+        open={!!confirmDeleteTheme}
+        onOpenChange={(o) => !o && setConfirmDeleteTheme(null)}
+        title='Xoá tag?'
+        description={`Tag "${confirmDeleteTheme?.name}" và toàn bộ ảnh trong tag sẽ bị xoá. Hành động này không thể hoàn tác.`}
+        confirmLabel='Xoá tag'
+        onConfirm={() => {
+          if (confirmDeleteTheme) deleteTheme(confirmDeleteTheme.id);
+          setConfirmDeleteTheme(null);
+        }}
+      />
+
+      {/* Confirm: delete image */}
+      <ConfirmDialog
+        open={confirmDeleteImage !== null}
+        onOpenChange={(o) => !o && setConfirmDeleteImage(null)}
+        title='Xoá ảnh?'
+        description='Ảnh này sẽ bị xoá khỏi gallery. Hành động này không thể hoàn tác.'
+        confirmLabel='Xoá ảnh'
+        onConfirm={() => {
+          if (confirmDeleteImage !== null) deleteImage(confirmDeleteImage);
+          setConfirmDeleteImage(null);
+        }}
+      />
+
+      {/* Confirm: edit theme */}
+      <ConfirmDialog
+        open={confirmEditTheme.open}
+        onOpenChange={(o) => setConfirmEditTheme((s) => ({ ...s, open: o }))}
+        title='Xác nhận chỉnh sửa?'
+        description='Bạn có chắc muốn lưu thay đổi cho tag này không?'
+        confirmLabel='Lưu thay đổi'
+        onConfirm={handleConfirmEditTheme}
+      />
     </div>
   );
 }

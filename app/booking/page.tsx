@@ -14,9 +14,9 @@ import { Input } from "@/components/ui/input";
 import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PhoneInput } from "@/components/booking/phone-input";
+import { PhoneInput } from "@/components/booking/PhoneInput";
 import { isValidPhoneNumber } from "react-phone-number-input";
-import { DatePickerInput } from "@/components/booking/date-picker";
+import { DatePickerInput } from "@/components/booking/DatePicker";
 
 const formSchema = z.object({
   name: z.string(),

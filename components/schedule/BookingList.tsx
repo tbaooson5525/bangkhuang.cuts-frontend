@@ -1,34 +1,18 @@
+// components/schedule/BookingList.tsx
 "use client";
 
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Trash2, ChevronDown } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import bookingApi from "@/api/bookingApi";
 import type { Appointment, AppointmentStatus } from "@/lib/types";
-
-// ── Config ────────────────────────────────────────────────────────
-const STATUS_CONFIG: Record<
-  AppointmentStatus,
-  { label: string; color: string; bg: string }
-> = {
-  PENDING: {
-    label: "Chờ xác nhận",
-    color: "text-yellow-700",
-    bg: "bg-yellow-50",
-  },
-  CONFIRMED: { label: "Đã xác nhận", color: "text-blue-700", bg: "bg-blue-50" },
-  DONE: { label: "Hoàn thành", color: "text-green-700", bg: "bg-green-50" },
-  CANCELLED: { label: "Đã huỷ", color: "text-red-700", bg: "bg-red-50" },
-};
-
-const ALLOWED_TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> = {
-  PENDING: ["CONFIRMED", "CANCELLED"],
-  CONFIRMED: ["DONE", "CANCELLED"],
-  DONE: ["CANCELLED"],
-  CANCELLED: [],
-};
+import {
+  ALLOWED_TRANSITIONS,
+  STATUS_CONFIG,
+} from "@/lib/constants/appointment";
 
 const STATUS_FILTERS: { label: string; value?: AppointmentStatus }[] = [
   { label: "Tất cả" },
@@ -38,15 +22,14 @@ const STATUS_FILTERS: { label: string; value?: AppointmentStatus }[] = [
   { label: "Đã huỷ", value: "CANCELLED" },
 ];
 
-// ── Status Badge ──────────────────────────────────────────────────
 function StatusBadge({ status }: { status: AppointmentStatus }) {
   const cfg = STATUS_CONFIG[status];
   return (
     <span
       className={cn(
         "px-2 py-0.5 rounded-full text-xs font-medium",
-        cfg.bg,
-        cfg.color,
+        cfg.bgColor,
+        cfg.textColor,
       )}
     >
       {cfg.label}
@@ -54,7 +37,6 @@ function StatusBadge({ status }: { status: AppointmentStatus }) {
   );
 }
 
-// ── Status Dropdown ───────────────────────────────────────────────
 function StatusDropdown({
   appointment,
   onUpdate,
@@ -76,7 +58,7 @@ function StatusDropdown({
   const handleOpen = () => {
     if (!btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
-    const dropdownHeight = transitions.length * 36 + 8; // approx height
+    const dropdownHeight = transitions.length * 36 + 8;
     const spaceBelow = window.innerHeight - rect.bottom;
     const top =
       spaceBelow >= dropdownHeight
@@ -96,14 +78,14 @@ function StatusDropdown({
         className='flex items-center gap-1 focus:outline-none disabled:opacity-50'
       >
         <StatusBadge status={appointment.status} />
-        <ChevronDown className='w-3 h-3 text-neutral-400' />
+        <ChevronDown className='w-3 h-3 text-neutral-400 dark:text-white/30' />
       </button>
 
       {open && (
         <>
           <div className='fixed inset-0 z-40' onClick={() => setOpen(false)} />
           <div
-            className='fixed z-50 bg-white rounded-xl border border-neutral-200 shadow-lg py-1 min-w-36'
+            className='fixed z-50 bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-white/[0.08] shadow-lg py-1 min-w-36'
             style={{ top: pos.top, left: pos.left }}
           >
             {transitions.map((s) => {
@@ -116,8 +98,8 @@ function StatusDropdown({
                     setOpen(false);
                   }}
                   className={cn(
-                    "w-full text-left px-3 py-2 text-xs hover:bg-neutral-50 transition-colors",
-                    cfg.color,
+                    "w-full text-left px-3 py-2 text-xs hover:bg-neutral-50 dark:hover:bg-white/[0.06] transition-colors dark:text-white/80",
+                    cfg.dotColor,
                   )}
                 >
                   {cfg.label}
@@ -131,7 +113,6 @@ function StatusDropdown({
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────
 export default function BookingList() {
   const queryClient = useQueryClient();
   const [activeFilter, setActiveFilter] = useState<
@@ -151,6 +132,10 @@ export default function BookingList() {
       bookingApi.updateStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      toast.success("Đã cập nhật trạng thái lịch hẹn.");
+    },
+    onError: () => {
+      toast.error("Không thể cập nhật trạng thái. Vui lòng thử lại.");
     },
   });
 
@@ -158,6 +143,10 @@ export default function BookingList() {
     mutationFn: (id: number) => bookingApi.deleteBooking(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      toast.success("Đã xoá lịch hẹn.");
+    },
+    onError: () => {
+      toast.error("Không thể xoá lịch hẹn. Vui lòng thử lại.");
     },
   });
 
@@ -165,7 +154,7 @@ export default function BookingList() {
     <div className='flex flex-col gap-4 mt-6'>
       {/* Header + Filter */}
       <div className='flex items-center justify-between shrink-0'>
-        <h2 className='text-base font-semibold text-neutral-900'>
+        <h2 className='text-base font-semibold text-neutral-900 dark:text-white'>
           Danh sách lịch hẹn
         </h2>
         <div className='flex items-center gap-1'>
@@ -176,8 +165,8 @@ export default function BookingList() {
               className={cn(
                 "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
                 activeFilter === f.value
-                  ? "bg-neutral-900 text-white"
-                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200",
+                  ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900"
+                  : "bg-neutral-100 dark:bg-white/[0.06] text-neutral-600 dark:text-white/50 hover:bg-neutral-200 dark:hover:bg-white/[0.10]",
               )}
             >
               {f.label}
@@ -189,77 +178,70 @@ export default function BookingList() {
       {/* Table */}
       {isLoading ? (
         <div className='flex justify-center py-10'>
-          <div className='w-7 h-7 rounded-full border-2 border-neutral-300 border-t-neutral-800 animate-spin' />
+          <div className='w-7 h-7 rounded-full border-2 border-neutral-300 dark:border-white/20 border-t-neutral-800 dark:border-t-white animate-spin' />
         </div>
       ) : appointments.length === 0 ? (
-        <div className='flex items-center justify-center py-16 text-neutral-400 text-sm rounded-2xl border border-neutral-200'>
+        <div className='flex items-center justify-center py-16 text-neutral-400 dark:text-white/30 text-sm rounded-2xl border border-neutral-200 dark:border-white/[0.08]'>
           Không có lịch hẹn nào
         </div>
       ) : (
-        <div className='rounded-2xl border border-neutral-200 overflow-hidden'>
+        <div className='rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden'>
           <table className='w-full text-sm'>
             <thead>
-              <tr className='bg-neutral-50 border-b border-neutral-200'>
-                <th className='text-left px-5 py-3 font-medium text-neutral-500'>
+              <tr className='bg-neutral-50 dark:bg-white/[0.03] border-b border-neutral-200 dark:border-white/[0.08]'>
+                <th className='text-left px-5 py-3 font-medium text-neutral-500 dark:text-white/40'>
                   Khách hàng
                 </th>
-                <th className='text-left px-5 py-3 font-medium text-neutral-500'>
+                <th className='text-left px-5 py-3 font-medium text-neutral-500 dark:text-white/40'>
                   Thời gian
                 </th>
-                <th className='text-left px-5 py-3 font-medium text-neutral-500'>
+                <th className='text-left px-5 py-3 font-medium text-neutral-500 dark:text-white/40'>
                   Nhân viên
                 </th>
-                <th className='text-left px-5 py-3 font-medium text-neutral-500'>
+                <th className='text-left px-5 py-3 font-medium text-neutral-500 dark:text-white/40'>
                   Dịch vụ
                 </th>
-                <th className='text-left px-5 py-3 font-medium text-neutral-500'>
+                <th className='text-left px-5 py-3 font-medium text-neutral-500 dark:text-white/40'>
                   Trạng thái
                 </th>
                 <th className='px-5 py-3' />
               </tr>
             </thead>
-            <tbody className='divide-y divide-neutral-100'>
+            <tbody className='divide-y divide-neutral-100 dark:divide-white/[0.05]'>
               {appointments.map((apt) => (
                 <tr
                   key={apt.id}
-                  className='hover:bg-neutral-50/50 transition-colors'
+                  className='hover:bg-neutral-50/50 dark:hover:bg-white/[0.02] transition-colors'
                 >
-                  {/* Khách hàng */}
                   <td className='px-5 py-3'>
-                    <div className='font-medium text-neutral-900'>
+                    <div className='font-medium text-neutral-900 dark:text-white'>
                       {apt.customerName}
                     </div>
-                    <div className='text-xs text-neutral-400'>{apt.phone}</div>
+                    <div className='text-xs text-neutral-400 dark:text-white/30'>
+                      {apt.phone}
+                    </div>
                   </td>
-
-                  {/* Thời gian */}
-                  <td className='px-5 py-3 text-neutral-600'>
+                  <td className='px-5 py-3 text-neutral-600 dark:text-white/60'>
                     {format(new Date(apt.appointmentStart), "dd/MM/yyyy HH:mm")}
                   </td>
-
-                  {/* Nhân viên */}
-                  <td className='px-5 py-3 text-neutral-600'>
+                  <td className='px-5 py-3 text-neutral-600 dark:text-white/60'>
                     {apt.staff.name}
                   </td>
-
-                  {/* Dịch vụ */}
                   <td className='px-5 py-3'>
                     <div className='flex flex-col gap-0.5'>
                       {apt.appointmentServices.map((as) => (
                         <span
                           key={as.serviceId}
-                          className='text-xs text-neutral-500'
+                          className='text-xs text-neutral-500 dark:text-white/40'
                         >
                           {as.service.name} —{" "}
-                          <span className='text-neutral-700 font-medium'>
+                          <span className='text-neutral-700 dark:text-white/70 font-medium'>
                             {as.service.price.toLocaleString("vi-VN")}đ
                           </span>
                         </span>
                       ))}
                     </div>
                   </td>
-
-                  {/* Trạng thái */}
                   <td className='px-5 py-3'>
                     <StatusDropdown
                       appointment={apt}
@@ -267,12 +249,10 @@ export default function BookingList() {
                       isPending={isUpdating}
                     />
                   </td>
-
-                  {/* Actions */}
                   <td className='px-5 py-3'>
                     <button
                       onClick={() => deleteBooking(apt.id)}
-                      className='p-1.5 rounded-lg text-neutral-300 hover:bg-red-50 hover:text-red-500 transition-colors'
+                      className='p-1.5 rounded-lg text-neutral-300 dark:text-white/20 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-colors'
                     >
                       <Trash2 className='w-4 h-4' />
                     </button>

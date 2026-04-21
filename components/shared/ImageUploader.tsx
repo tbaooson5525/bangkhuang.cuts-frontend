@@ -5,7 +5,7 @@ import {
   UploadIcon,
   XIcon,
 } from "lucide-react";
-import { useFileUpload, type FileMetadata } from "@/hooks/use-file-upload";
+import { useFileUpload, type FileMetadata } from "@/hooks/useFileUpload";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef } from "react";
 

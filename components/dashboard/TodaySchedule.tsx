@@ -5,7 +5,6 @@ import { CheckCircle2, Circle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import Card from "@/components/card";
 import { cn } from "@/lib/utils";
 import { FALLBACK_IMAGE } from "@/lib/constants/images";
 import type { Appointment } from "@/lib/types";
@@ -34,11 +33,7 @@ export default function TodaySchedule({ appointments, loading }: Props) {
   );
 
   return (
-    <Card
-      actionBtn={actionBtn}
-      actionFn={undefined}
-      className='flex flex-col gap-4'
-    >
+    <div className='flex flex-col gap-4'>
       <div className='pr-10'>
         <p className='font-bold text-foreground text-base'>Lịch hôm nay</p>
         <p className='text-xs text-foreground/40 mt-0.5'>
@@ -126,6 +121,6 @@ export default function TodaySchedule({ appointments, loading }: Props) {
           })}
         </div>
       )}
-    </Card>
+    </div>
   );
 }

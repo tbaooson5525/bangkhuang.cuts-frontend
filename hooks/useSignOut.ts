@@ -7,7 +7,7 @@ export function useSignOut() {
 
   return useMutation({
     mutationFn: () => authApi.logout(),
-    onSuccess: () => router.push("/admin/login"),
+    onSuccess: () => router.push("/login"),
     onError: () => alert("Đăng xuất thất bại, vui lòng thử lại"),
     retry: 3,
   });

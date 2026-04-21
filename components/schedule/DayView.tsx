@@ -9,7 +9,7 @@ interface DayViewProps {
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const HOUR_HEIGHT = 60; // px
+const HOUR_HEIGHT = 60;
 
 export function DayView({ selectedDate, appointments }: DayViewProps) {
   const [currentTime] = useState(new Date());
@@ -17,7 +17,6 @@ export function DayView({ selectedDate, appointments }: DayViewProps) {
 
   useEffect(() => {
     if (scrollRef.current) {
-      // Scroll to 8 AM (8 * 60 = 480px)
       scrollRef.current.scrollTop = 8 * HOUR_HEIGHT;
     }
   }, []);
@@ -28,11 +27,11 @@ export function DayView({ selectedDate, appointments }: DayViewProps) {
 
   return (
     <div className='flex-1 flex flex-col h-full overflow-hidden rounded-lg'>
-      <div className='p-4 border-b border-gray-200 flex items-center justify-between'>
-        <h2 className='text-xl font-semibold text-gray-900'>
+      <div className='p-4 border-b border-neutral-200 dark:border-white/[0.08] flex items-center justify-between'>
+        <h2 className='text-xl font-semibold text-neutral-900 dark:text-white'>
           {format(selectedDate, "EEEE, MMMM d, yyyy")}
         </h2>
-        <div className='text-sm text-gray-500'>
+        <div className='text-sm text-neutral-500 dark:text-white/40'>
           {dayAppointments.length} Appointment
           {dayAppointments.length !== 1 ? "s" : ""}
         </div>
@@ -47,13 +46,13 @@ export function DayView({ selectedDate, appointments }: DayViewProps) {
           {HOURS.map((hour) => (
             <div
               key={hour}
-              className='absolute w-full border-b border-gray-100 flex items-center'
+              className='absolute w-full flex items-center'
               style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}
             >
-              <span className='absolute left-2 text-xs text-gray-400 w-10 text-right'>
+              <span className='absolute left-2 text-xs text-neutral-400 dark:text-white/30 w-10 text-right'>
                 {format(setHours(new Date(), hour), "h a")}
               </span>
-              <div className='ml-14 w-full border-b border-gray-100' />
+              <div className='ml-14 w-full border-b border-neutral-100 dark:border-white/[0.05]' />
             </div>
           ))}
 
@@ -77,7 +76,7 @@ export function DayView({ selectedDate, appointments }: DayViewProps) {
             const startMinutes =
               startDate.getHours() * 60 + startDate.getMinutes();
             const top = startMinutes * (HOUR_HEIGHT / 60);
-            const height = 60 * (HOUR_HEIGHT / 60); // 1 hour duration
+            const height = 60 * (HOUR_HEIGHT / 60);
 
             return (
               <div
@@ -85,10 +84,12 @@ export function DayView({ selectedDate, appointments }: DayViewProps) {
                 className={cn(
                   "absolute left-16 right-4 rounded-md p-2 text-xs border-l-4 shadow-sm transition-all hover:z-20 cursor-pointer",
                   apt.status === "CONFIRMED"
-                    ? "bg-blue-50 border-blue-500 text-blue-700"
+                    ? "bg-blue-50 dark:bg-blue-500/10 border-blue-500 text-blue-700 dark:text-blue-300"
                     : apt.status === "PENDING"
-                      ? "bg-yellow-50 border-yellow-500 text-yellow-700"
-                      : "bg-red-50 border-red-500 text-red-700",
+                      ? "bg-yellow-50 dark:bg-yellow-500/10 border-yellow-500 text-yellow-700 dark:text-yellow-300"
+                      : apt.status === "DONE"
+                        ? "bg-neutral-50 dark:bg-white/[0.04] border-neutral-400 dark:border-white/20 text-neutral-500 dark:text-white/40"
+                        : "bg-red-50 dark:bg-red-500/10 border-red-500 text-red-700 dark:text-red-300",
                 )}
                 style={{ top, height }}
               >

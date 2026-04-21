@@ -16,14 +16,14 @@ adminClient.interceptors.response.use(
   (error) => {
     const url = error.config?.url ?? "";
     const isAuthEndpoint =
-      url.includes("/admin/login") || url.includes("/admin/change-password");
+      url.includes("/login") || url.includes("/admin/change-password");
 
     if (
       error.response?.status === 401 &&
       !isAuthEndpoint &&
       typeof window !== "undefined"
     ) {
-      window.location.href = "/admin/login";
+      window.location.href = "/login";
     }
     return Promise.reject(error);
   },

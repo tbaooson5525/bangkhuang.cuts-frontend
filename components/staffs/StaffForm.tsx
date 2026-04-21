@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import ImageUploader from "@/components/image-uploader";
+import ImageUploader from "@/components/shared/ImageUploader";
 import FormActions from "@/components/shared/FormActions";
 import ServerError from "@/components/shared/ServerError";
 
@@ -57,12 +57,6 @@ export default function StaffForm({
       ...defaultValues,
     },
   });
-
-  useEffect(() => {
-    if (defaultValues) {
-      form.reset({ isActive: true, ...defaultValues });
-    }
-  }, [defaultValues, form]);
 
   return (
     <form

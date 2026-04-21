@@ -7,12 +7,14 @@ type Options<TData, TVariables> = {
   mutationFn: (variables: TVariables) => Promise<TData>;
   invalidateKeys?: string[][];
   onSuccess?: (data: TData) => void;
+  onError?: (errorMessage: string) => void;
 };
 
 export function useFormMutation<TData = unknown, TVariables = unknown>({
   mutationFn,
   invalidateKeys = [],
   onSuccess,
+  onError,
 }: Options<TData, TVariables>) {
   const queryClient = useQueryClient();
 
@@ -23,6 +25,12 @@ export function useFormMutation<TData = unknown, TVariables = unknown>({
         queryClient.invalidateQueries({ queryKey: key }),
       );
       onSuccess?.(data);
+    },
+    onError: (error) => {
+      const message = isAxiosError(error)
+        ? (error.response?.data?.message ?? "Lỗi server, vui lòng thử lại")
+        : "Lỗi server, vui lòng thử lại";
+      onError?.(message);
     },
   });
 
