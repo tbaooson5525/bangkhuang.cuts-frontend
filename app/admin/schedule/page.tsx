@@ -4,8 +4,10 @@ import { APPOINTMENT_STATUS } from "@/lib/types";
 import { STATUS_CONFIG } from "@/lib/constants/appointment";
 import PageTitle from "@/components/shared/PageTitle";
 
-const Calendar = lazy(() => import("@/components/schedule/Calendar"));
-const BookingList = lazy(() => import("@/components/schedule/BookingList"));
+const Calendar = lazy(() => import("../../../components/schedule/Calendar"));
+const BookingList = lazy(
+  () => import("../../../components/schedule/BookingList"),
+);
 
 export default function SchedulePage() {
   return (
